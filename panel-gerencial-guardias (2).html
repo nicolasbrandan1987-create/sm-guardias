@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SM Guardias — Panel Gerencial</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#060b16;--surface:#0e1623;--surface2:#151f2e;--surface3:#1c2940;--border:rgba(255,255,255,0.06);--accent:#00c2a8;--accent2:#0077ff;--warn:#f59e0b;--danger:#ef4444;--success:#22c55e;--text:#e2e8f0;--muted:#4a5568;--sm-red:#cc0000;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+
+  .topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+  .brand{display:flex;align-items:center;gap:8px;}
+  .brand-dot{width:9px;height:9px;border-radius:50%;background:var(--sm-red);box-shadow:0 0 8px var(--sm-red);}
+  .brand-text{font-size:14px;font-weight:700;}
+  .brand-sub{font-size:11px;color:var(--muted);}
+  .topbar-right{display:flex;align-items:center;gap:8px;}
+  .mes-badge{background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:4px 10px;font-size:12px;font-family:'DM Mono',monospace;color:var(--muted);}
+  .refresh-btn{background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:5px 10px;color:var(--text);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;}
+  .refresh-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+  .tabs{display:flex;border-bottom:1px solid var(--border);padding:0 20px;background:var(--surface);}
+  .tab{padding:11px 16px;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .2s;}
+  .tab:hover{color:var(--text);}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+
+  .content{padding:16px;}
+  .tab-panel{display:none;}
+  .tab-panel.active{display:block;}
+
+  /* KPIs */
+  .kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px;}
+  @media(max-width:800px){.kpi-row{grid-template-columns:repeat(3,1fr);}}
+  @media(max-width:500px){.kpi-row{grid-template-columns:repeat(2,1fr);}}
+  .kpi{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;position:relative;overflow:hidden;}
+  .kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+  .kpi-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px;}
+  .kpi-val{font-family:'DM Mono',monospace;font-size:24px;font-weight:500;line-height:1;}
+  .kpi-sub{font-size:11px;color:var(--muted);margin-top:3px;}
+
+  /* SEMANAL */
+  .semanas-wrap{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+  @media(max-width:600px){.semanas-wrap{grid-template-columns:1fr;}}
+  .chart-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;}
+  .chart-title{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;}
+  .bar-chart{display:flex;align-items:flex-end;gap:8px;height:100px;}
+  .bar-group{display:flex;flex-direction:column;align-items:center;flex:1;gap:3px;}
+  .bar-wrap{display:flex;gap:2px;align-items:flex-end;height:80px;width:100%;}
+  .bar{flex:1;border-radius:4px 4px 0 0;min-height:2px;transition:height .8s ease;}
+  .bar-sem{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;}
+  .bar-val{font-size:10px;font-family:'DM Mono',monospace;}
+
+  /* SEMANAS TABLE */
+  .semanas-table{width:100%;border-collapse:collapse;margin-bottom:16px;}
+  .semanas-table th{padding:8px 12px;text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);background:var(--surface2);border-bottom:1px solid var(--border);}
+  .semanas-table td{padding:10px 12px;font-size:13px;border-bottom:1px solid var(--border);}
+  .semanas-table tr:last-child td{border-bottom:none;}
+  .semanas-table tr:hover td{background:var(--surface2);}
+  .num{font-family:'DM Mono',monospace;}
+  .delta{font-size:11px;font-family:'DM Mono',monospace;}
+  .delta-pos{color:var(--success);}
+  .delta-neg{color:var(--danger);}
+  .delta-neu{color:var(--muted);}
+
+  /* RANKING */
+  .table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:16px;}
+  .table-header{padding:14px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);}
+  .table-title{font-size:13px;font-weight:600;}
+  .filter-wrap{display:flex;gap:6px;}
+  select.filter{background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:12px;padding:5px 8px;font-family:'DM Sans',sans-serif;outline:none;appearance:none;}
+  table{width:100%;border-collapse:collapse;}
+  thead th{padding:9px 14px;text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);background:var(--surface2);border-bottom:1px solid var(--border);}
+  tbody tr{border-bottom:1px solid var(--border);transition:background .15s;}
+  tbody tr:last-child{border-bottom:none;}
+  tbody tr:hover{background:var(--surface2);}
+  td{padding:11px 14px;font-size:13px;}
+  .rank-num{font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);width:28px;}
+  .rank-1 .rank-num{color:#ffd700;font-weight:700;}
+  .rank-2 .rank-num{color:#c0c0c0;}
+  .rank-3 .rank-num{color:#cd7f32;}
+  .asesor-name{font-weight:600;}
+  .asesor-sub{font-size:11px;color:var(--muted);margin-top:1px;}
+  .score-pill{display:inline-flex;align-items:center;padding:3px 9px;border-radius:7px;font-family:'DM Mono',monospace;font-size:12px;font-weight:500;}
+  .sp-verde{background:rgba(34,197,94,.1);color:var(--success);}
+  .sp-amarillo{background:rgba(245,158,11,.1);color:var(--warn);}
+  .sp-rojo{background:rgba(239,68,68,.1);color:var(--danger);}
+  .score-bar-bg{height:3px;background:var(--surface3);border-radius:2px;margin-top:4px;width:70px;}
+  .score-bar-fill{height:3px;border-radius:2px;}
+
+  /* ALERTAS */
+  .alerta-item{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:11px;margin-bottom:8px;border:1px solid;}
+  .alerta-rojo{background:rgba(239,68,68,.07);border-color:rgba(239,68,68,.2);}
+  .alerta-amarillo{background:rgba(245,158,11,.06);border-color:rgba(245,158,11,.2);}
+  .alerta-text{flex:1;}
+  .alerta-nombre{font-size:13px;font-weight:600;margin-bottom:2px;}
+  .alerta-sub{font-size:11px;color:var(--muted);}
+  .alerta-score{font-family:'DM Mono',monospace;font-size:14px;}
+
+  /* CLÍNICAS */
+  .clinicas-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+  @media(max-width:600px){.clinicas-grid{grid-template-columns:repeat(2,1fr);}}
+  .clinica-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;}
+  .clinica-icon{font-size:22px;margin-bottom:6px;}
+  .clinica-name{font-size:13px;font-weight:700;margin-bottom:8px;}
+  .clin-stat{display:flex;justify-content:space-between;margin-bottom:4px;}
+  .clin-lbl{font-size:11px;color:var(--muted);}
+  .clin-val{font-size:11px;font-family:'DM Mono',monospace;}
+  .conv-tag{font-size:10px;padding:2px 6px;border-radius:5px;background:rgba(0,194,168,.1);color:var(--accent);font-weight:700;margin-top:4px;display:inline-block;}
+
+  .section-title{font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
+  .spinner-wrap{text-align:center;padding:50px;}
+  .spinner{display:inline-block;width:28px;height:28px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-dot"></div>
+    <span class="brand-text">Guardias Clínicas</span>
+    <span class="brand-sub">&nbsp;· Swiss Medical VIDA</span>
+  </div>
+  <div class="topbar-right">
+    <div class="mes-badge" id="mesBadge">—</div>
+    <button class="refresh-btn" onclick="cargarTodo()">↻ Actualizar</button>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab('ranking',this)">📊 Ranking</div>
+  <div class="tab" onclick="showTab('semanal',this)">📈 Semanal</div>
+  <div class="tab" onclick="showTab('clinicas',this)">🏥 Clínicas</div>
+  <div class="tab" onclick="showTab('alertas',this)">⚠️ Alertas</div>
+</div>
+
+<div class="content">
+  <!-- KPIs -->
+  <div class="kpi-row">
+    <div class="kpi" style="--c:var(--accent)"><div class="kpi::before" style="background:var(--accent)"></div><div class="kpi-lbl">Asesores</div><div class="kpi-val" id="kA" style="color:var(--accent)">—</div><div class="kpi-sub">activos</div></div>
+    <div class="kpi"><div class="kpi-lbl">Cotizados</div><div class="kpi-val" id="kC" style="color:var(--warn)">—</div></div>
+    <div class="kpi"><div class="kpi-lbl">Vendidos</div><div class="kpi-val" id="kV" style="color:var(--success)">—</div></div>
+    <div class="kpi"><div class="kpi-lbl">Prima vendida</div><div class="kpi-val" id="kP" style="color:var(--success);font-size:18px">—</div></div>
+    <div class="kpi"><div class="kpi-lbl">Conversión</div><div class="kpi-val" id="kK" style="color:var(--accent)">—</div><div class="kpi-sub">cotizado→vendido</div></div>
+  </div>
+
+  <!-- TAB RANKING -->
+  <div class="tab-panel active" id="tab-ranking">
+    <div class="table-wrap" id="rankingWrap"><div class="spinner-wrap"><div class="spinner"></div></div></div>
+  </div>
+
+  <!-- TAB SEMANAL -->
+  <div class="tab-panel" id="tab-semanal">
+    <div id="semanalWrap"><div class="spinner-wrap"><div class="spinner"></div></div></div>
+  </div>
+
+  <!-- TAB CLÍNICAS -->
+  <div class="tab-panel" id="tab-clinicas">
+    <div class="clinicas-grid" id="clinicasGrid"><div class="spinner-wrap"><div class="spinner"></div></div></div>
+  </div>
+
+  <!-- TAB ALERTAS -->
+  <div class="tab-panel" id="tab-alertas">
+    <div id="alertasWrap"><div class="spinner-wrap"><div class="spinner"></div></div></div>
+  </div>
+</div>
+
+<script>
+const URL_AS="https://script.google.com/macros/s/AKfycby5BTEKxqKRjZ4DvMLCdHAv-j-f9XdGztJ0WjSV8YvqX0QdLIBAMURR0TUziqMbt2Utag/exec";
+const ICONS={"Los Arcos":"🏥","Cymsa":"🏨","Agote":"🏦","Zabala":"🏢","Nordelta":"🌿","Olivos":"🌳"};
+const MESES=['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+function jsonp(url,name,cb){
+  fetch(url,{redirect:'follow'})
+    .then(r=>r.json())
+    .then(d=>cb(d))
+    .catch(()=>cb({ok:false}));
+}
+function showTab(id,el){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));el.classList.add('active');document.getElementById('tab-'+id).classList.add('active');}
+
+function cargarTodo(){
+  jsonp(URL_AS+'?action=getDashboardGerencial','cb_ger',d=>{if(d.ok)renderGerencial(d);});
+  jsonp(URL_AS+'?action=getSemanasComparativa','cb_sem',d=>{if(d.ok)renderSemanal(d);});
+}
+
+function renderGerencial(data){
+  const ranking=data.ranking||[];
+  const mes=data.mes||'';
+  const [y,m]=mes.split('-');
+  document.getElementById('mesBadge').textContent=`${MESES[parseInt(m)]||''} ${y}`;
+
+  // KPIs
+  const totC=ranking.reduce((a,r)=>a+r.cotizados,0);
+  const totV=ranking.reduce((a,r)=>a+r.vendidos,0);
+  const totP=ranking.reduce((a,r)=>a+r.primaVendida,0);
+  document.getElementById('kA').textContent=ranking.length;
+  document.getElementById('kC').textContent=totC;
+  document.getElementById('kV').textContent=totV;
+  document.getElementById('kP').textContent='$'+Math.round(totP/1000)+'k';
+  document.getElementById('kK').textContent=(totC>0?Math.round(totV/(totC+totV)*100):0)+'%';
+
+  // RANKING TABLE
+  let html=`<div class="table-header"><span class="table-title">Ranking del mes</span><div class="filter-wrap">
+    <select class="filter" id="fJefe" onchange="filtrar()"><option value="">Todos los jefes</option></select>
+    <select class="filter" id="fClin" onchange="filtrar()"><option value="">Todas las clínicas</option></select>
+  </div></div><div style="overflow-x:auto"><table><thead><tr>
+    <th>#</th><th>Asesor</th><th>Score</th><th>Cotiz.</th><th>Vend.</th><th>Caídos</th><th>Prima vend.</th><th>Conv.</th><th>Guardias</th>
+  </tr></thead><tbody id="rankingBody"></tbody></table></div>`;
+  document.getElementById('rankingWrap').innerHTML=html;
+
+  const jefes=[...new Set(ranking.map(r=>r.jefe).filter(Boolean))];
+  const clinicas=[...new Set(ranking.map(r=>r.clinica).filter(Boolean))];
+  jefes.forEach(j=>{document.getElementById('fJefe').innerHTML+=`<option value="${j}">${j}</option>`;});
+  clinicas.forEach(c=>{document.getElementById('fClin').innerHTML+=`<option value="${c}">${c}</option>`;});
+
+  window._rank=ranking;filtrar();
+
+  // CLÍNICAS
+  const pc=data.porClinica||{};
+  const clinGrid=['Los Arcos','Cymsa','Agote','Zabala','Nordelta','Olivos'].map(c=>{
+    const d=pc[c]||{asesores:0,guardias:0,contactos:0,leads:0,cotizados:0,vendidos:0,primaVendida:0};
+    const conv=d.cotizados>0?Math.round(d.vendidos/(d.cotizados+d.vendidos)*100):0;
+    return `<div class="clinica-card">
+      <div class="clinica-icon">${ICONS[c]||'🏥'}</div>
+      <div class="clinica-name">${c}</div>
+      <div class="clin-stat"><span class="clin-lbl">Asesores</span><span class="clin-val">${d.asesores}</span></div>
+      <div class="clin-stat"><span class="clin-lbl">Cotizados</span><span class="clin-val">${d.cotizados}</span></div>
+      <div class="clin-stat"><span class="clin-lbl">Vendidos</span><span class="clin-val">${d.vendidos}</span></div>
+      <div class="clin-stat"><span class="clin-lbl">Prima</span><span class="clin-val">$${Math.round((d.primaVendida||0)/1000)}k</span></div>
+      <span class="conv-tag">${conv}% conv.</span>
+    </div>`;
+  }).join('');
+  document.getElementById('clinicasGrid').innerHTML=clinGrid;
+
+  // ALERTAS
+  const bajos=ranking.filter(r=>r.score<50);
+  const medios=ranking.filter(r=>r.score>=50&&r.score<75);
+  let aHtml='';
+  if(!bajos.length&&!medios.length){aHtml='<div style="text-align:center;color:var(--success);padding:40px;font-size:14px;">✓ Todos en niveles aceptables</div>';}
+  else{
+    if(bajos.length){aHtml+=`<div class="section-title" style="color:var(--danger);margin-bottom:8px">🔴 Score crítico (< 50) — ${bajos.length} asesores</div>`;bajos.forEach(a=>{aHtml+=alertaItem(a,'rojo');});}
+    if(medios.length){aHtml+=`<div class="section-title" style="color:var(--warn);margin-top:16px;margin-bottom:8px">🟡 En desarrollo (50–74) — ${medios.length} asesores</div>`;medios.forEach(a=>{aHtml+=alertaItem(a,'amarillo');});}
+  }
+  document.getElementById('alertasWrap').innerHTML=aHtml;
+}
+
+function alertaItem(a,tipo){
+  const scoreColor=tipo==='rojo'?'var(--danger)':'var(--warn)';
+  return `<div class="alerta-item alerta-${tipo}">
+    <div class="alerta-text">
+      <div class="alerta-nombre">${a.nombre}</div>
+      <div class="alerta-sub">${ICONS[a.clinica]||''} ${a.clinica} · ${a.jefe||'—'} · Conv: ${a.conversion}%</div>
+    </div>
+    <div class="alerta-score" style="color:${scoreColor}">${a.score} pts</div>
+  </div>`;
+}
+
+function filtrar(){
+  const jefe=document.getElementById('fJefe')?.value||'';
+  const clin=document.getElementById('fClin')?.value||'';
+  const data=(window._rank||[]).filter(r=>(!jefe||r.jefe===jefe)&&(!clin||r.clinica===clin));
+  const tbody=document.getElementById('rankingBody');if(!tbody)return;
+  tbody.innerHTML=data.map((r,i)=>{
+    const sc=r.score>=75?'sp-verde':r.score>=50?'sp-amarillo':'sp-rojo';
+    const bc=r.score>=75?'#22c55e':r.score>=50?'#f59e0b':'#ef4444';
+    return `<tr class="rank-${i+1}">
+      <td class="rank-num">${i+1}</td>
+      <td><div class="asesor-name">${r.nombre}</div><div class="asesor-sub">${ICONS[r.clinica]||''} ${r.clinica||'—'} · ${r.jefe||'—'}</div></td>
+      <td><span class="score-pill ${sc}">${r.score}</span><div class="score-bar-bg"><div class="score-bar-fill" style="width:${r.score}%;background:${bc}"></div></div></td>
+      <td class="num">${r.cotizados}</td>
+      <td class="num" style="color:var(--success)">${r.vendidos}</td>
+      <td class="num" style="color:var(--danger)">${r.caidos}</td>
+      <td class="num">$${(r.primaVendida||0).toLocaleString('es-AR')}</td>
+      <td class="num">${r.conversion}%</td>
+      <td class="num">${r.guardias}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderSemanal(data){
+  const semanas=data.semanas||[];
+  if(!semanas.length){document.getElementById('semanalWrap').innerHTML='<div style="text-align:center;color:var(--muted);padding:40px;font-size:14px">Sin datos semanales aún.</div>';return;}
+
+  // Calcular máximos para las barras
+  const maxCot=Math.max(...semanas.map(s=>s.cotizados),1);
+  const maxVend=Math.max(...semanas.map(s=>s.vendidos),1);
+  const maxPrima=Math.max(...semanas.map(s=>s.primaVendida),1);
+
+  // Gráfico barras ventas/cotiz
+  const barsCotVend=semanas.map(s=>`
+    <div class="bar-group">
+      <div class="bar-wrap">
+        <div class="bar" style="height:${Math.round(s.cotizados/maxCot*80)}px;background:var(--warn);opacity:.8" title="Cotizados: ${s.cotizados}"></div>
+        <div class="bar" style="height:${Math.round(s.vendidos/maxVend*80)}px;background:var(--success)" title="Vendidos: ${s.vendidos}"></div>
+      </div>
+      <div class="bar-sem">${s.semana}</div>
+    </div>`).join('');
+
+  const barsPrima=semanas.map(s=>`
+    <div class="bar-group">
+      <div class="bar-wrap">
+        <div class="bar" style="height:${Math.round(s.primaVendida/maxPrima*80)}px;background:var(--accent2);width:100%" title="$${s.primaVendida.toLocaleString('es-AR')}"></div>
+      </div>
+      <div class="bar-sem">${s.semana}</div>
+    </div>`).join('');
+
+  // Tabla comparativa con delta
+  let tableRows='';
+  semanas.forEach((s,i)=>{
+    const prev=semanas[i-1];
+    const dV=prev?s.vendidos-prev.vendidos:null;
+    const dP=prev?s.primaVendida-prev.primaVendida:null;
+    const dClass=v=>v===null?'delta-neu':v>0?'delta-pos':'delta-neg';
+    const dStr=v=>v===null?'—':v>0?`▲${v}`:`▼${Math.abs(v)}`;
+    const dPStr=v=>v===null?'—':v>0?`▲$${Math.round(v/1000)}k`:`▼$${Math.round(Math.abs(v)/1000)}k`;
+    const conv=s.cotizados>0?Math.round(s.vendidos/(s.cotizados+s.vendidos)*100):0;
+    tableRows+=`<tr>
+      <td style="font-family:'DM Mono',monospace;font-weight:600">${s.semana}</td>
+      <td class="num">${s.guardias}</td>
+      <td class="num">${s.contactos}</td>
+      <td class="num" style="color:var(--warn)">${s.cotizados}</td>
+      <td class="num" style="color:var(--success)">${s.vendidos} <span class="delta ${dClass(dV)}">${dStr(dV)}</span></td>
+      <td class="num">${conv}%</td>
+      <td class="num" style="color:var(--success)">$${s.primaVendida.toLocaleString('es-AR')} <span class="delta ${dClass(dP)}">${dPStr(dP)}</span></td>
+    </tr>`;
+  });
+
+  document.getElementById('semanalWrap').innerHTML=`
+  <div class="semanas-wrap">
+    <div class="chart-card">
+      <div class="chart-title">🟡 Cotizados &nbsp;🟢 Vendidos por semana</div>
+      <div class="bar-chart">${barsCotVend}</div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">🔵 Prima vendida por semana</div>
+      <div class="bar-chart">${barsPrima}</div>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <div class="table-header"><span class="table-title">Comparativa semana a semana</span></div>
+    <div style="overflow-x:auto">
+    <table class="semanas-table">
+      <thead><tr><th>Semana</th><th>Guardias</th><th>Contactos</th><th>Cotizados</th><th>Vendidos</th><th>Conv.</th><th>Prima vendida</th></tr></thead>
+      <tbody>${tableRows}</tbody>
+    </table>
+    </div>
+  </div>`;
+}
+
+cargarTodo();
+</script>
+</body>
+</html>
