@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SM Guardias — Check-in</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0f1e;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --border: rgba(255,255,255,0.07);
+    --accent: #00c2a8;
+    --accent2: #0077ff;
+    --warn: #f59e0b;
+    --danger: #ef4444;
+    --text: #f1f5f9;
+    --muted: #64748b;
+    --sm-red: #cc0000;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0 0 40px;
+  }
+
+  /* HEADER */
+  .header {
+    background: linear-gradient(135deg, #cc0000 0%, #8b0000 100%);
+    padding: 20px 20px 28px;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::after {
+    content: '';
+    position: absolute;
+    bottom: -20px; left: 0; right: 0;
+    height: 40px;
+    background: var(--bg);
+    border-radius: 40px 40px 0 0;
+  }
+  .header-logo {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    opacity: 0.7;
+    margin-bottom: 6px;
+  }
+  .header-title {
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+  .header-sub {
+    font-size: 13px;
+    opacity: 0.7;
+    margin-top: 4px;
+  }
+
+  /* MAIN */
+  .main { padding: 32px 16px 0; }
+
+  /* ASESOR SELECTOR */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 12px;
+  }
+  .card-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+  select, input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    padding: 12px 14px;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+  select:focus, input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0,194,168,0.1);
+  }
+
+  /* ESTADO ACTUAL */
+  .estado-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .estado-libre { background: rgba(100,116,139,0.2); color: var(--muted); }
+  .estado-activo { background: rgba(0,194,168,0.15); color: var(--accent); }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .dot.pulse { animation: pulse 1.5s infinite; }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.3); }
+  }
+
+  /* CLÍNICA PILLS */
+  .clinicas-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .clinica-pill {
+    background: var(--surface2);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .clinica-pill:active { transform: scale(0.96); }
+  .clinica-pill.selected {
+    border-color: var(--accent);
+    background: rgba(0,194,168,0.1);
+    color: var(--accent);
+  }
+  .clinica-icon { font-size: 20px; display: block; margin-bottom: 4px; }
+
+  /* ACTIVIDAD */
+  .actividad-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+  }
+  .actividad-item label {
+    display: block;
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 5px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .actividad-item input {
+    text-align: center;
+    font-family: 'DM Mono', monospace;
+    font-size: 20px;
+    font-weight: 500;
+    padding: 10px 8px;
+  }
+  .number-ctrl {
+    display: flex;
+    align-items: center;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .number-ctrl button {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 20px;
+    padding: 8px 12px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: color 0.2s;
+  }
+  .number-ctrl button:active { color: var(--accent); }
+  .number-ctrl input {
+    border: none;
+    background: none;
+    border-radius: 0;
+    padding: 8px 4px;
+    min-width: 0;
+  }
+  .number-ctrl input:focus { box-shadow: none; }
+
+  /* BOTONES */
+  .btn {
+    width: 100%;
+    padding: 16px;
+    border-radius: 14px;
+    border: none;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn-checkin {
+    background: linear-gradient(135deg, var(--accent), #00a896);
+    color: #000;
+  }
+  .btn-checkout {
+    background: linear-gradient(135deg, var(--accent2), #0055cc);
+    color: #fff;
+  }
+  .btn-actividad {
+    background: linear-gradient(135deg, var(--warn), #d97706);
+    color: #000;
+  }
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* TIMER */
+  .timer {
+    font-family: 'DM Mono', monospace;
+    font-size: 36px;
+    font-weight: 500;
+    color: var(--accent);
+    text-align: center;
+    margin: 8px 0 4px;
+    letter-spacing: 2px;
+  }
+  .timer-label {
+    text-align: center;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    max-width: 320px;
+    width: 90%;
+    text-align: center;
+    transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    z-index: 999;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.ok { border-color: var(--accent); color: var(--accent); }
+  .toast.err { border-color: var(--danger); color: var(--danger); }
+
+  /* LOADER */
+  .loader {
+    display: inline-block;
+    width: 18px; height: 18px;
+    border: 2px solid rgba(255,255,255,0.2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .hidden { display: none !important; }
+  .divider { height: 1px; background: var(--border); margin: 16px 0; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-logo">Swiss Medical · VIDA</div>
+  <div class="header-title">Guardias Clínicas</div>
+  <div class="header-sub" id="fechaHoy">—</div>
+</div>
+
+<div class="main">
+
+  <!-- SELECCIÓN DE ASESOR -->
+  <div class="card" id="selectorCard">
+    <div class="card-label">Asesor</div>
+    <select id="selectAsesor" onchange="onAsesorChange()">
+      <option value="">Seleccioná tu nombre...</option>
+    </select>
+  </div>
+
+  <!-- ESTADO ACTUAL -->
+  <div class="card hidden" id="estadoCard">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+      <span class="card-label" style="margin:0">Estado hoy</span>
+      <span class="estado-badge estado-libre" id="estadoBadge">
+        <span class="dot"></span> Sin guardia
+      </span>
+    </div>
+    <div class="timer hidden" id="timerDisplay">00:00:00</div>
+    <div class="timer-label hidden" id="timerLabel">tiempo en clínica</div>
+  </div>
+
+  <!-- SELECCIÓN DE CLÍNICA -->
+  <div class="card hidden" id="clinicaCard">
+    <div class="card-label">Clínica</div>
+    <div class="clinicas-grid" id="clinicasGrid">
+      <!-- generado por JS -->
+    </div>
+  </div>
+
+  <!-- BOTONES ACCIÓN -->
+  <div id="accionesCard" class="hidden">
+    <button class="btn btn-checkin" id="btnCheckin" onclick="hacerCheckin()">
+      → Iniciar Guardia
+    </button>
+    <button class="btn btn-checkout hidden" id="btnCheckout" onclick="hacerCheckout()">
+      ← Finalizar Guardia
+    </button>
+  </div>
+
+  <!-- CARGA DE ACTIVIDAD -->
+  <div class="card hidden" id="actividadCard">
+    <div class="card-label">Actividad del día</div>
+    <div class="actividad-row">
+      <div class="actividad-item">
+        <label>Contactos</label>
+        <div class="number-ctrl">
+          <button onclick="cambiar('contactos',-1)">−</button>
+          <input type="number" id="contactos" value="0" min="0">
+          <button onclick="cambiar('contactos',1)">+</button>
+        </div>
+      </div>
+      <div class="actividad-item">
+        <label>Leads</label>
+        <div class="number-ctrl">
+          <button onclick="cambiar('leads',-1)">−</button>
+          <input type="number" id="leads" value="0" min="0">
+          <button onclick="cambiar('leads',1)">+</button>
+        </div>
+      </div>
+      <div class="actividad-item">
+        <label>Pólizas</label>
+        <div class="number-ctrl">
+          <button onclick="cambiar('polizas',-1)">−</button>
+          <input type="number" id="polizas" value="0" min="0">
+          <button onclick="cambiar('polizas',1)">+</button>
+        </div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <button class="btn btn-actividad" onclick="guardarActividad()">Guardar Actividad</button>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyQCmKWH912-1le5hBTIewUQmvJapaqpphVV6CsHkdNICa3WnBjDs1p_OFmrlvGOCONKA/exec";
+const CLINICAS = ["Los Arcos","Cymsa","Agote","Zabala","Nordelta","Olivos"];
+const CLINICA_ICONS = {"Los Arcos":"🏥","Cymsa":"🏨","Agote":"🏦","Zabala":"🏢","Nordelta":"🌿","Olivos":"🌳"};
+
+let estadoLocal = { checkinActivo: false, clinicaActual: null, horaEntrada: null };
+let timerInterval = null;
+let clinicaSeleccionada = null;
+
+// ── INIT ──────────────────────────────────────────────────────
+
+document.getElementById('fechaHoy').textContent = new Date().toLocaleDateString('es-AR', {weekday:'long', day:'numeric', month:'long'});
+
+// Build clínica pills
+const grid = document.getElementById('clinicasGrid');
+CLINICAS.forEach(c => {
+  const d = document.createElement('div');
+  d.className = 'clinica-pill';
+  d.innerHTML = `<span class="clinica-icon">${CLINICA_ICONS[c]||'🏥'}</span>${c}`;
+  d.onclick = () => selectClinica(c, d);
+  grid.appendChild(d);
+});
+
+// Load asesores
+jsonp(APPS_SCRIPT_URL + "?action=getAsesores", "cb_asesores", data => {
+  const sel = document.getElementById('selectAsesor');
+  if (data.ok && data.asesores) {
+    data.asesores.forEach(a => {
+      const opt = document.createElement('option');
+      opt.value = a.nombre;
+      opt.textContent = a.nombre;
+      sel.appendChild(opt);
+    });
+  }
+});
+
+// ── HANDLERS ─────────────────────────────────────────────────
+
+function onAsesorChange() {
+  const nombre = document.getElementById('selectAsesor').value;
+  if (!nombre) return;
+
+  document.getElementById('estadoCard').classList.remove('hidden');
+  document.getElementById('clinicaCard').classList.remove('hidden');
+  document.getElementById('accionesCard').classList.remove('hidden');
+
+  // Verificar estado actual
+  jsonp(`${APPS_SCRIPT_URL}?action=getMiActividad&asesor=${encodeURIComponent(nombre)}`, "cb_estado", data => {
+    if (data.ok && data.registros && data.registros.length > 0) {
+      const hoy = new Date().toISOString().split('T')[0];
+      const ultimo = data.registros[0];
+      if (ultimo.fecha === hoy && ultimo.estado === 'activo') {
+        setCheckinActivo(ultimo.clinica, ultimo.entrada);
+      }
+    }
+  });
+}
+
+function selectClinica(nombre, el) {
+  document.querySelectorAll('.clinica-pill').forEach(p => p.classList.remove('selected'));
+  el.classList.add('selected');
+  clinicaSeleccionada = nombre;
+}
+
+// ── ACCIONES ─────────────────────────────────────────────────
+
+function hacerCheckin() {
+  const asesor = document.getElementById('selectAsesor').value;
+  if (!asesor) { toast("Seleccioná tu nombre primero", "err"); return; }
+  if (!clinicaSeleccionada) { toast("Seleccioná la clínica", "err"); return; }
+
+  document.getElementById('btnCheckin').innerHTML = '<span class="loader"></span>Registrando...';
+  document.getElementById('btnCheckin').disabled = true;
+
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      const url = `${APPS_SCRIPT_URL}?action=checkin&asesor=${encodeURIComponent(asesor)}&clinica=${encodeURIComponent(clinicaSeleccionada)}&lat=${pos.coords.latitude}&lng=${pos.coords.longitude}`;
+      jsonp(url, "cb_checkin", data => {
+        document.getElementById('btnCheckin').disabled = false;
+        if (data.ok) {
+          toast(data.mensaje, "ok");
+          setCheckinActivo(clinicaSeleccionada, new Date().toISOString());
+          document.getElementById('actividadCard').classList.remove('hidden');
+        } else {
+          toast(data.error || "Error al registrar", "err");
+          document.getElementById('btnCheckin').innerHTML = '→ Iniciar Guardia';
+        }
+      });
+    },
+    () => {
+      // Sin geolocalización igual registra
+      const url = `${APPS_SCRIPT_URL}?action=checkin&asesor=${encodeURIComponent(asesor)}&clinica=${encodeURIComponent(clinicaSeleccionada)}`;
+      jsonp(url, "cb_checkin2", data => {
+        document.getElementById('btnCheckin').disabled = false;
+        if (data.ok) {
+          toast(data.mensaje, "ok");
+          setCheckinActivo(clinicaSeleccionada, new Date().toISOString());
+          document.getElementById('actividadCard').classList.remove('hidden');
+        } else {
+          toast(data.error || "Error al registrar", "err");
+          document.getElementById('btnCheckin').innerHTML = '→ Iniciar Guardia';
+        }
+      });
+    }
+  );
+}
+
+function hacerCheckout() {
+  const asesor = document.getElementById('selectAsesor').value;
+  document.getElementById('btnCheckout').innerHTML = '<span class="loader"></span>Finalizando...';
+  document.getElementById('btnCheckout').disabled = true;
+
+  const url = `${APPS_SCRIPT_URL}?action=checkout&asesor=${encodeURIComponent(asesor)}`;
+  jsonp(url, "cb_checkout", data => {
+    document.getElementById('btnCheckout').disabled = false;
+    document.getElementById('btnCheckout').innerHTML = '← Finalizar Guardia';
+    if (data.ok) {
+      toast(`✓ ${data.mensaje}`, "ok");
+      setCheckinInactivo();
+    } else {
+      toast(data.error || "Error", "err");
+    }
+  });
+}
+
+function guardarActividad() {
+  const asesor = document.getElementById('selectAsesor').value;
+  const c = document.getElementById('contactos').value;
+  const l = document.getElementById('leads').value;
+  const p = document.getElementById('polizas').value;
+
+  const url = `${APPS_SCRIPT_URL}?action=cargarActividad&asesor=${encodeURIComponent(asesor)}&contactos=${c}&leads=${l}&polizas=${p}`;
+  jsonp(url, "cb_actividad", data => {
+    if (data.ok) toast("✓ Actividad guardada", "ok");
+    else toast(data.error || "Error", "err");
+  });
+}
+
+// ── UI STATE ──────────────────────────────────────────────────
+
+function setCheckinActivo(clinica, horaStr) {
+  estadoLocal.checkinActivo = true;
+  estadoLocal.horaEntrada = new Date(horaStr);
+
+  document.getElementById('estadoBadge').className = 'estado-badge estado-activo';
+  document.getElementById('estadoBadge').innerHTML = `<span class="dot pulse"></span> En ${clinica}`;
+  document.getElementById('timerDisplay').classList.remove('hidden');
+  document.getElementById('timerLabel').classList.remove('hidden');
+  document.getElementById('btnCheckin').classList.add('hidden');
+  document.getElementById('btnCheckout').classList.remove('hidden');
+  document.getElementById('actividadCard').classList.remove('hidden');
+
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = setInterval(updateTimer, 1000);
+  updateTimer();
+}
+
+function setCheckinInactivo() {
+  estadoLocal.checkinActivo = false;
+  clearInterval(timerInterval);
+  document.getElementById('estadoBadge').className = 'estado-badge estado-libre';
+  document.getElementById('estadoBadge').innerHTML = `<span class="dot"></span> Sin guardia`;
+  document.getElementById('timerDisplay').classList.add('hidden');
+  document.getElementById('timerLabel').classList.add('hidden');
+  document.getElementById('btnCheckin').classList.remove('hidden');
+  document.getElementById('btnCheckin').innerHTML = '→ Iniciar Guardia';
+  document.getElementById('btnCheckout').classList.add('hidden');
+}
+
+function updateTimer() {
+  if (!estadoLocal.horaEntrada) return;
+  const diff = Math.floor((Date.now() - estadoLocal.horaEntrada) / 1000);
+  const h = String(Math.floor(diff/3600)).padStart(2,'0');
+  const m = String(Math.floor((diff%3600)/60)).padStart(2,'0');
+  const s = String(diff%60).padStart(2,'0');
+  document.getElementById('timerDisplay').textContent = `${h}:${m}:${s}`;
+}
+
+function cambiar(campo, delta) {
+  const el = document.getElementById(campo);
+  el.value = Math.max(0, (parseInt(el.value)||0) + delta);
+}
+
+// ── UTILS ─────────────────────────────────────────────────────
+
+function toast(msg, tipo) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${tipo} show`;
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+let cbCount = 0;
+function jsonp(url, name, cb) {
+  const cbName = name + '_' + (cbCount++);
+  window[cbName] = function(data) { cb(data); delete window[cbName]; };
+  const s = document.createElement('script');
+  s.src = url + '&callback=' + cbName;
+  s.onerror = () => { cb({ ok: false, error: 'Sin conexión' }); };
+  document.head.appendChild(s);
+  setTimeout(() => s.remove(), 10000);
+}
+</script>
+</body>
+</html>
